@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio to Guitar Tab Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .upload-area {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 2rem;
+            border: 3px dashed #ddd;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .upload-hint {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .files-list {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-top: 2rem;
+        }
+
+        .file-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-info h3 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .file-status {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .status-uploaded { color: #28a745; }
+        .status-processing { color: #ffc107; }
+        .status-complete { color: #17a2b8; }
+        .status-error { color: #dc3545; }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        .tab-display {
+            background: #1a1a1a;
+            color: #fff;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+
+        .string-line {
+            margin: 0.5rem 0;
+            font-size: 1.1rem;
+        }
+
+        .string-name {
+            color: #ffc107;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .header h1 { font-size: 2rem; }
+            .upload-area { padding: 2rem; }
+            .file-item { flex-direction: column; align-items: flex-start; }
+            .file-actions { margin-top: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎸 Audio to Guitar Tab</h1>
+            <p>Convert your audio files to MIDI and guitar tablature with AI</p>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">Drop your audio files here or click to browse</div>
+            <div class="upload-hint">Supports MP3, WAV, FLAC • Max 50MB per file</div>
+            <input type="file" id="fileInput" class="file-input" multiple accept=".mp3,.wav,.flac">
+        </div>
+
+        <div id="filesList" class="files-list" style="display: none;">
+            <h2>📂 Uploaded Files</h2>
+            <div id="filesContainer"></div>
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🎵</div>
+                <h3>Audio Upload</h3>
+                <p>Upload multiple audio files with drag & drop support</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎹</div>
+                <h3>MIDI Conversion</h3>
+                <p>AI-powered audio-to-MIDI transcription</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎸</div>
+                <h3>Guitar Tabs</h3>
+                <p>Smart guitar tablature with intelligent fret assignment</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const filesList = document.getElementById('filesList');
+        const filesContainer = document.getElementById('filesContainer');
+        
+        let uploadedFiles = [];
+
+        // Upload area interactions
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files);
+            handleFiles(files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            handleFiles(files);
+        });
+
+        async function handleFiles(files) {
+            const formData = new FormData();
+            files.forEach(file => formData.append('files', file));
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                
+                result.results.forEach(file => {
+                    if (file.status === 'uploaded') {
+                        uploadedFiles.push({
+                            id: file.file_id,
+                            filename: file.filename,
+                            status: 'uploaded',
+                            midiProcessed: false,
+                            tabGenerated: false
+                        });
+                    }
+                });
+                
+                updateFilesList();
+                filesList.style.display = 'block';
+            } catch (error) {
+                alert('Upload failed: ' + error.message);
+            }
+        }
+
+        function updateFilesList() {
+            filesContainer.innerHTML = '';
+            
+            uploadedFiles.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div class="file-info">
+                        <h3>🎵 ${file.filename}</h3>
+                        <div class="file-status status-${file.status}">
+                            Status: ${getStatusText(file)}
+                        </div>
+                        <div id="progress-${file.id}" class="progress-bar" style="display: none;">
+                            <div class="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <div id="tab-${file.id}" class="tab-display" style="display: none;"></div>
+                    </div>
+                    <div class="file-actions">
+                        ${getActionButtons(file)}
+                    </div>
+                `;
+                filesContainer.appendChild(fileItem);
+            });
+        }
+
+        function getStatusText(file) {
+            if (file.status === 'complete') return 'Complete ✅';
+            if (file.tabGenerated) return 'Tab Generated 🎸';
+            if (file.midiProcessed) return 'MIDI Ready 🎹';
+            if (file.status === 'uploaded') return 'Uploaded 📁';
+            return 'Processing ⏳';
+        }
+
+        function getActionButtons(file) {
+            let buttons = '';
+            
+            if (!file.midiProcessed) {
+                buttons += `<button class="btn" onclick="processMidi('${file.id}')">🎹 Process to MIDI</button>`;
+            } else {
+                buttons += `<button class="btn" onclick="downloadMidi('${file.id}')">⬇️ Download MIDI</button>`;
+            }
+            
+            if (file.midiProcessed && !file.tabGenerated) {
+                buttons += `<button class="btn" onclick="generateTab('${file.id}')">🎸 Generate Tab</button>`;
+            }
+            
+            if (file.tabGenerated) {
+                buttons += `<button class="btn" onclick="downloadPdf('${file.id}')">📄 Download PDF</button>`;
+            }
+            
+            return buttons;
+        }
+
+        async function processMidi(fileId) {
+            const file = uploadedFiles.find(f => f.id === fileId);
+            file.status = 'processing';
+            updateFilesList();
+            showProgress(fileId);
+
+            try {
+                const response = await fetch(`/process/${fileId}`, { method: 'POST' });
+                const result = await response.json();
+                
+                file.midiProcessed = true;
+                file.status = 'midi_ready';
+                updateFilesList();
+                hideProgress(fileId);
+            } catch (error) {
+                alert('MIDI processing failed: ' + error.message);
+                file.status = 'error';
+                updateFilesList();
+                hideProgress(fileId);
+            }
+        }
+
+        async function generateTab(fileId) {
+            const file = uploadedFiles.find(f => f.id === fileId);
+            file.status = 'processing';
+            updateFilesList();
+            showProgress(fileId);
+
+            try {
+                const response = await fetch(`/generate-tab/${fileId}`, { method: 'POST' });
+                const result = await response.json();
+                
+                file.tabGenerated = true;
+                file.status = 'complete';
+                displayTab(fileId, result.tab_data);
+                updateFilesList();
+                hideProgress(fileId);
+            } catch (error) {
+                alert('Tab generation failed: ' + error.message);
+                file.status = 'error';
+                updateFilesList();
+                hideProgress(fileId);
+            }
+        }
+
+        function displayTab(fileId, tabData) {
+            const tabDiv = document.getElementById(`tab-${fileId}`);
+            const stringNames = ['E', 'B', 'G', 'D', 'A', 'E'];
+            
+            let tabText = '🎸 Guitar Tablature:\\n\\n';
+            
+            stringNames.forEach((name, stringIndex) => {
+                let line = `${name} |`;
+                tabData.forEach(chord => {
+                    const fret = chord.strings[stringIndex];
+                    line += fret >= 0 ? `--${fret}--` : '-----';
+                });
+                line += '|';
+                tabText += line + '\\n';
+            });
+            
+            tabDiv.innerHTML = `<pre>${tabText}</pre>`;
+            tabDiv.style.display = 'block';
+        }
+
+        function showProgress(fileId) {
+            document.getElementById(`progress-${fileId}`).style.display = 'block';
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                document.querySelector(`#progress-${fileId} .progress-fill`).style.width = progress + '%';
+                if (progress >= 100) clearInterval(interval);
+            }, 200);
+        }
+
+        function hideProgress(fileId) {
+            document.getElementById(`progress-${fileId}`).style.display = 'none';
+        }
+
+        async function downloadMidi(fileId) {
+            window.open(`/download/midi/${fileId}`, '_blank');
+        }
+
+        async function downloadPdf(fileId) {
+            window.open(`/download/pdf/${fileId}`, '_blank');
+        }
+    </script>
+</body>
+</html>

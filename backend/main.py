@@ -9,8 +9,8 @@ from typing import List
 import uuid
 import asyncio
 
-from audio_processor import AudioProcessor
-from midi_to_tab import MidiToTabConverter
+# from audio_processor import AudioProcessor
+# from midi_to_tab import MidiToTabConverter
 
 app = FastAPI(title="Audio to Guitar Tab Converter")
 
@@ -24,9 +24,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize processors
-audio_processor = AudioProcessor()
-tab_converter = MidiToTabConverter()
+# Initialize processors (temporarily disabled for testing)
+# audio_processor = AudioProcessor()
+# tab_converter = MidiToTabConverter()
 
 # Supported audio formats
 SUPPORTED_FORMATS = {".mp3", ".wav", ".flac"}
@@ -108,8 +108,12 @@ async def process_audio_to_midi(file_id: str):
         if not audio_file:
             raise HTTPException(status_code=404, detail="Audio file not found")
         
-        # Process audio to MIDI
-        midi_path = await audio_processor.transcribe_to_midi(audio_file, file_id)
+        # Process audio to MIDI (placeholder - will implement with full dependencies)
+        # midi_path = await audio_processor.transcribe_to_midi(audio_file, file_id)
+        
+        # For now, create a placeholder MIDI file
+        midi_path = OUTPUT_DIR / f"{file_id}.mid"
+        midi_path.touch()  # Create empty file for testing
         
         return {
             "file_id": file_id,
@@ -129,8 +133,19 @@ async def generate_guitar_tab(file_id: str):
         if not midi_file.exists():
             raise HTTPException(status_code=404, detail="MIDI file not found")
         
-        # Convert MIDI to guitar tab
-        tab_data = await tab_converter.midi_to_tab(midi_file, file_id)
+        # Convert MIDI to guitar tab (placeholder - will implement with full dependencies)
+        # tab_data = await tab_converter.midi_to_tab(midi_file, file_id)
+        
+        # Placeholder tab data for testing
+        tab_data = [
+            {"time": 0.0, "strings": [3, -1, -1, -1, -1, -1], "duration": 0.5, "note_count": 1},
+            {"time": 0.5, "strings": [-1, 2, -1, -1, -1, -1], "duration": 0.5, "note_count": 1},
+            {"time": 1.0, "strings": [-1, -1, 0, -1, -1, -1], "duration": 0.5, "note_count": 1},
+        ]
+        
+        # Create placeholder PDF
+        pdf_path = OUTPUT_DIR / f"{file_id}_tab.pdf"
+        pdf_path.touch()  # Create empty file for testing
         
         return {
             "file_id": file_id,
@@ -184,4 +199,4 @@ async def get_processing_status(file_id: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)

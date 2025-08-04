@@ -34,9 +34,12 @@ function App() {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
-    }`}>
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: darkMode ? '#1a1a1a' : '#f9f9f9',
+      color: darkMode ? 'white' : '#333',
+      transition: 'all 0.3s'
+    }}>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
